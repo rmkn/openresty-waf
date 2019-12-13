@@ -7,8 +7,9 @@ ENV PCRE_VERSION 8.43
 ENV ZLIB_VERSION 1.2.11
 ENV MODSECURITY_NGINX_VERSION 1.0.0
 ENV OWASP_CRS_VERSION 3.1.0
+ENV LUAROCKS_VERSION 3.2.1
 
-RUN yum install -y perl make gcc gcc-c++ pcre-devel ccache systemtap-sdt-devel patch git libtool autoconf file flex bison yajl yajl-devel curl-devel curl GeoIP-devel doxygen
+RUN yum install -y perl make gcc gcc-c++ pcre-devel ccache systemtap-sdt-devel patch git libtool autoconf file flex bison yajl yajl-devel curl-devel curl GeoIP-devel doxygen unzip
 
 RUN curl -o /usr/local/src/zlib.tar.gz -SL https://www.zlib.net/zlib-${ZLIB_VERSION}.tar.gz \
 	&& tar zxf /usr/local/src/zlib.tar.gz -C /usr/local/src \
@@ -92,6 +93,13 @@ RUN curl -o /usr/local/src/owasp-modsecurity-crs.tar.gz -SL https://github.com/S
 	&& ln -sf owasp-modsecurity-crs-${OWASP_CRS_VERSION} owasp-modsecurity-crs \
 	&& mv /usr/local/owasp-modsecurity-crs/crs-setup.conf.example /usr/local/owasp-modsecurity-crs/crs-setup.conf
 
+RUN curl -o /usr/local/src/luarocks.tar.gz -SL https://luarocks.org/releases/luarocks-${LUAROCKS_VERSION}.tar.gz \
+	&& tar zxf /usr/local/src/luarocks.tar.gz  -C /usr/local/src \
+	&& cd /usr/local/src/luarocks-${LUAROCKS_VERSION} \
+	&& ./configure --with-lua=/usr/local/openresty/luajit/ \
+	&& make \
+	&& make install
+
 RUN rm -rf /usr/local/openresty/zlib/share \
 	&& rm -f  /usr/local/openresty/zlib/lib/*.la \
 	&& rm -rf /usr/local/openresty/zlib/lib/pkgconfig \
@@ -134,6 +142,7 @@ RUN rm -rf /usr/local/openresty/zlib/share \
 COPY nginx.conf /usr/local/openresty/nginx/conf/
 COPY default.conf security.conf /usr/local/openresty/nginx/conf/conf.d/
 COPY main.conf /usr/local/openresty/nginx/modsec/
+COPY openssl.cnf /usr/local/openresty/openssl/ssl/
 RUN cp /usr/local/src/ModSecurity/modsecurity.conf-recommended /usr/local/openresty/nginx/modsec/modsecurity.conf 
 RUN cp /usr/local/src/ModSecurity/unicode.mapping /usr/local/openresty/nginx/modsec/
 
