@@ -1,15 +1,15 @@
 FROM rmkn/centos7
 LABEL maintainer "rmkn"
 
-ENV OPENRESTY_VERSION 1.15.8.2
-ENV OPENSSL_VERSION 1.1.1d
-ENV PCRE_VERSION 8.43
+ENV OPENRESTY_VERSION 1.19.3.1
+ENV OPENSSL_VERSION 1.1.1h
+ENV PCRE_VERSION 8.44
 ENV ZLIB_VERSION 1.2.11
-ENV MODSECURITY_NGINX_VERSION 1.0.0
-ENV OWASP_CRS_VERSION 3.1.0
-ENV LUAROCKS_VERSION 3.2.1
+ENV MODSECURITY_NGINX_VERSION 1.0.1
+ENV OWASP_CRS_VERSION 3.2.0
+ENV LUAROCKS_VERSION 3.4.0
 
-RUN yum install -y perl make gcc gcc-c++ pcre-devel ccache systemtap-sdt-devel patch git libtool autoconf file flex bison yajl yajl-devel curl-devel curl GeoIP-devel doxygen unzip
+RUN yum install -y perl make gcc gcc-c++ pcre-devel ccache systemtap-sdt-devel patch git libtool autoconf file flex bison yajl yajl-devel curl-devel curl GeoIP-devel doxygen unzip libxml2-devel
 
 RUN curl -o /usr/local/src/zlib.tar.gz -SL https://www.zlib.net/zlib-${ZLIB_VERSION}.tar.gz \
 	&& tar zxf /usr/local/src/zlib.tar.gz -C /usr/local/src \
@@ -80,7 +80,6 @@ RUN curl -o /usr/local/src/openresty.tar.gz -SL https://openresty.org/download/o
 		--with-http_gunzip_module \
 		--with-threads \
 		--with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT' \
-		--with-dtrace-probes \
 		--add-dynamic-module=../ModSecurity-nginx-${MODSECURITY_NGINX_VERSION} \
 	&& gmake \
 	&& gmake install
@@ -140,7 +139,7 @@ RUN rm -rf /usr/local/openresty/zlib/share \
 	&& rm -f  /usr/local/src/openresty.tar.gz
 
 COPY nginx.conf /usr/local/openresty/nginx/conf/
-COPY default.conf security.conf /usr/local/openresty/nginx/conf/conf.d/
+COPY security.conf virtual.conf /usr/local/openresty/nginx/conf/conf.d/
 COPY main.conf /usr/local/openresty/nginx/modsec/
 COPY openssl.cnf /usr/local/openresty/openssl/ssl/
 RUN cp /usr/local/src/ModSecurity/modsecurity.conf-recommended /usr/local/openresty/nginx/modsec/modsecurity.conf 
@@ -149,4 +148,3 @@ RUN cp /usr/local/src/ModSecurity/unicode.mapping /usr/local/openresty/nginx/mod
 EXPOSE 80 443
 
 CMD ["/usr/bin/openresty", "-g", "daemon off;"]
-
