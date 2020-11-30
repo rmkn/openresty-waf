@@ -9,21 +9,22 @@ ENV MODSECURITY_NGINX_VERSION 1.0.1
 ENV OWASP_CRS_VERSION 3.2.0
 ENV LUAROCKS_VERSION 3.4.0
 
-RUN yum install -y perl make gcc gcc-c++ pcre-devel ccache systemtap-sdt-devel patch git libtool autoconf file flex bison yajl yajl-devel curl-devel curl GeoIP-devel doxygen unzip libxml2-devel
+#RUN yum install -y perl make gcc gcc-c++ pcre-devel ccache systemtap-sdt-devel patch git libtool autoconf file flex bison yajl yajl-devel curl-devel curl GeoIP-devel doxygen unzip libxml2-devel
+RUN yum install -y perl make gcc gcc-c++ pcre-devel ccache patch git libtool autoconf file flex bison yajl-devel curl-devel GeoIP-devel doxygen unzip libxml2-devel
 
 RUN curl -o /usr/local/src/zlib.tar.gz -SL https://www.zlib.net/zlib-${ZLIB_VERSION}.tar.gz \
 	&& tar zxf /usr/local/src/zlib.tar.gz -C /usr/local/src \
 	&& cd /usr/local/src/zlib-${ZLIB_VERSION} \
 	&& ./configure --prefix=/usr/local/openresty/zlib \
-	&& make CFLAGS='-O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN -g' SFLAGS='-O3 -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN -g' \
+	&& make CFLAGS='-O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN -g3' SFLAGS='-O3 -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN -g3' \
 	&& make install
 
 RUN curl -o /usr/local/src/openssl.tar.gz -SL https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz \
 	&& tar zxf /usr/local/src/openssl.tar.gz -C /usr/local/src \
 	&& cd /usr/local/src/openssl-${OPENSSL_VERSION} \
-	&& curl -o sess_set_get_cb_yield.patch -SL https://raw.githubusercontent.com/openresty/openresty/master/patches/openssl-1.1.1c-sess_set_get_cb_yield.patch \
+	&& curl -o sess_set_get_cb_yield.patch -SL https://raw.githubusercontent.com/openresty/openresty/master/patches/openssl-1.1.1f-sess_set_get_cb_yield.patch \
 	&& patch -p1 < sess_set_get_cb_yield.patch \
-	&& ./config no-threads shared zlib -g enable-ssl3 enable-ssl3-method --prefix=/usr/local/openresty/openssl --libdir=lib -I/usr/local/openresty/zlib/include -L/usr/local/openresty/zlib/lib -Wl,-rpath,/usr/local/openresty/zlib/lib:/usr/local/openresty/openssl/lib \
+	&& ./config shared zlib -g3 enable-camellia enable-seed enable-rfc3779 enable-cms enable-md2 enable-rc5 enable-weak-ssl-ciphers enable-ssl3 enable-ssl3-method --prefix=/usr/local/openresty/openssl --libdir=lib -I/usr/local/openresty/zlib/include -L/usr/local/openresty/zlib/lib -Wl,-rpath,/usr/local/openresty/zlib/lib:/usr/local/openresty/openssl/lib \
 	&& make CC='ccache gcc -fdiagnostics-color=always' \
 	&& make install_sw
 
@@ -79,6 +80,7 @@ RUN curl -o /usr/local/src/openresty.tar.gz -SL https://openresty.org/download/o
 		--with-http_mp4_module \
 		--with-http_gunzip_module \
 		--with-threads \
+		--with-compat \
 		--with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT' \
 		--add-dynamic-module=../ModSecurity-nginx-${MODSECURITY_NGINX_VERSION} \
 	&& gmake \
