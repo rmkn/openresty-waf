@@ -1,14 +1,14 @@
 FROM rmkn/centos7
 LABEL maintainer "rmkn"
 
-ENV OPENRESTY_VERSION 1.19.3.1
-ENV OPENSSL_VERSION 1.1.1i
-ENV OPENSSL_PATCH_VERSION 1.1.1f
-ENV PCRE_VERSION 8.44
-ENV ZLIB_VERSION 1.2.11
-ENV MODSECURITY_NGINX_VERSION 1.0.1
-ENV OWASP_CRS_VERSION 3.2.0
-ENV LUAROCKS_VERSION 3.4.0
+ARG OPENRESTY_VERSION="1.19.3.1"
+ARG OPENSSL_VERSION="1.1.1i"
+ARG OPENSSL_PATCH_VERSION="1.1.1f"
+ARG PCRE_VERSION="8.44"
+ARG ZLIB_VERSION="1.2.11"
+ARG MODSECURITY_NGINX_VERSION="1.0.1"
+ARG OWASP_CRS_VERSION="3.2.0"
+ARG LUAROCKS_VERSION="3.4.0"
 
 RUN yum install -y perl make gcc gcc-c++ pcre-devel ccache patch git libtool autoconf file flex bison yajl-devel curl-devel GeoIP-devel doxygen unzip libxml2-devel
 
@@ -101,6 +101,13 @@ RUN curl -o /usr/local/src/luarocks.tar.gz -SL https://luarocks.org/releases/lua
 	&& make \
 	&& make install
 
+COPY nginx.conf /usr/local/openresty/nginx/conf/
+COPY security.conf virtual.conf /usr/local/openresty/nginx/conf/conf.d/
+COPY main.conf /usr/local/openresty/nginx/modsec/
+COPY openssl.cnf /usr/local/openresty/openssl/ssl/
+RUN cp /usr/local/src/ModSecurity/modsecurity.conf-recommended /usr/local/openresty/nginx/modsec/modsecurity.conf 
+RUN cp /usr/local/src/ModSecurity/unicode.mapping /usr/local/openresty/nginx/modsec/
+
 RUN rm -rf /usr/local/openresty/zlib/share \
 	&& rm -f  /usr/local/openresty/zlib/lib/*.la \
 	&& rm -rf /usr/local/openresty/zlib/lib/pkgconfig \
@@ -135,17 +142,16 @@ RUN rm -rf /usr/local/openresty/zlib/share \
 	&& rm -rf /usr/local/src/openssl-${OPENSSL_VERSION} \
 	&& rm -rf /usr/local/src/pcre-${PCRE_VERSION} \
 	&& rm -rf /usr/local/src/openresty-${OPENRESTY_VERSION} \
+	&& rm -rf /usr/local/src/ModSecurity \
+	&& rm -rf /usr/local/src/ModSecurity-nginx-${MODSECURITY_NGINX_VERSION} \
+	&& rm -rf /usr/local/src/luarocks-${LUAROCKS_VERSION} \
 	&& rm -f  /usr/local/src/zlib.tar.gz \
 	&& rm -f  /usr/local/src/openssl.tar.gz \
 	&& rm -f  /usr/local/src/pcre.tar.gz \
-	&& rm -f  /usr/local/src/openresty.tar.gz
-
-COPY nginx.conf /usr/local/openresty/nginx/conf/
-COPY security.conf virtual.conf /usr/local/openresty/nginx/conf/conf.d/
-COPY main.conf /usr/local/openresty/nginx/modsec/
-COPY openssl.cnf /usr/local/openresty/openssl/ssl/
-RUN cp /usr/local/src/ModSecurity/modsecurity.conf-recommended /usr/local/openresty/nginx/modsec/modsecurity.conf 
-RUN cp /usr/local/src/ModSecurity/unicode.mapping /usr/local/openresty/nginx/modsec/
+	&& rm -f  /usr/local/src/openresty.tar.gz \
+	&& rm -f  /usr/local/src/luarocks.tar.gz \
+	&& rm -f  /usr/local/src/modsecurity-nginx.tar.gz \
+	&& rm -f  /usr/local/src/owasp-modsecurity-crs.tar.gz
 
 EXPOSE 80 443
 
