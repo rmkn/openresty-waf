@@ -2,14 +2,14 @@ FROM rmkn/centos7
 LABEL maintainer "rmkn"
 
 ENV OPENRESTY_VERSION 1.19.3.1
-ENV OPENSSL_VERSION 1.1.1h
+ENV OPENSSL_VERSION 1.1.1i
+ENV OPENSSL_PATCH_VERSION 1.1.1f
 ENV PCRE_VERSION 8.44
 ENV ZLIB_VERSION 1.2.11
 ENV MODSECURITY_NGINX_VERSION 1.0.1
 ENV OWASP_CRS_VERSION 3.2.0
 ENV LUAROCKS_VERSION 3.4.0
 
-#RUN yum install -y perl make gcc gcc-c++ pcre-devel ccache systemtap-sdt-devel patch git libtool autoconf file flex bison yajl yajl-devel curl-devel curl GeoIP-devel doxygen unzip libxml2-devel
 RUN yum install -y perl make gcc gcc-c++ pcre-devel ccache patch git libtool autoconf file flex bison yajl-devel curl-devel GeoIP-devel doxygen unzip libxml2-devel
 
 RUN curl -o /usr/local/src/zlib.tar.gz -SL https://www.zlib.net/zlib-${ZLIB_VERSION}.tar.gz \
@@ -22,7 +22,7 @@ RUN curl -o /usr/local/src/zlib.tar.gz -SL https://www.zlib.net/zlib-${ZLIB_VERS
 RUN curl -o /usr/local/src/openssl.tar.gz -SL https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz \
 	&& tar zxf /usr/local/src/openssl.tar.gz -C /usr/local/src \
 	&& cd /usr/local/src/openssl-${OPENSSL_VERSION} \
-	&& curl -o sess_set_get_cb_yield.patch -SL https://raw.githubusercontent.com/openresty/openresty/master/patches/openssl-1.1.1f-sess_set_get_cb_yield.patch \
+	&& curl -o sess_set_get_cb_yield.patch -SL https://raw.githubusercontent.com/openresty/openresty/master/patches/openssl-${OPENSSL_PATCH_VERSION}-sess_set_get_cb_yield.patch \
 	&& patch -p1 < sess_set_get_cb_yield.patch \
 	&& ./config shared zlib -g3 enable-camellia enable-seed enable-rfc3779 enable-cms enable-md2 enable-rc5 enable-weak-ssl-ciphers enable-ssl3 enable-ssl3-method --prefix=/usr/local/openresty/openssl --libdir=lib -I/usr/local/openresty/zlib/include -L/usr/local/openresty/zlib/lib -Wl,-rpath,/usr/local/openresty/zlib/lib:/usr/local/openresty/openssl/lib \
 	&& make CC='ccache gcc -fdiagnostics-color=always' \
@@ -82,7 +82,7 @@ RUN curl -o /usr/local/src/openresty.tar.gz -SL https://openresty.org/download/o
 		--with-threads \
 		--with-compat \
 		--with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT' \
-		--add-dynamic-module=../ModSecurity-nginx-${MODSECURITY_NGINX_VERSION} \
+		--add-dynamic-module=/usr/local/src/ModSecurity-nginx-${MODSECURITY_NGINX_VERSION} \
 	&& gmake \
 	&& gmake install
 
